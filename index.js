@@ -8,12 +8,15 @@ import React, { Component } from 'react';
 import {
   AppRegistry,
   Dimensions,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
+import Svg,{
+    Polyline,
+} from 'react-native-svg';
 
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = 56;
@@ -31,15 +34,14 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
     selectedIndex: 0,
   }
 
-  // _arrowView() returns a view containing two triangles, A and B when index is 0, or C and D when index is 1.
-  // B is a little bigger than A. A is above B in different color to form the shape of >.
+  // _arrowView() returns a view containing a triangle A, or a view containing two small triangles, C and D.
   //
   // --------
   // |\\  C |
   // | \\   |
   // |  \\  |
   // |   \\ |
-  // |A/B \\|
+  // |A   \\|
   // |   // |
   // |  //  |
   // | //   |
@@ -48,8 +50,12 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
   _arrowView(index: number, isSelected: boolean) {
     return ( index == 0 ?
       <View style={[styles.leftArrowView]}>
-        <View style={styles.triangleB}></View>
         <View style={[styles.triangleA, {borderLeftColor: isSelected?selectedColor:notSelectedColor}]}></View>
+        <Svg width={ARROW_WIDTH} height={HEIGHT}>
+          <Polyline fill='none' stroke='gray' strokeWidth='2'
+            points={'0,-2 ' + (ARROW_WIDTH-1) +','+ HEIGHT/2
+            + ' 0,' + (HEIGHT+2)} />
+        </Svg>
       </View>
       :
       <View style={[styles.rightArrowView]}>
@@ -168,23 +174,10 @@ const styles = StyleSheet.create({
     width: 0,
     height: 0,
     borderTopWidth: HEIGHT / 2,
-    borderBottomWidth: HEIGHT / 2 + 2,
-    borderLeftWidth: ARROW_WIDTH - 3,
+    borderBottomWidth: HEIGHT / 2,
+    borderLeftWidth: ARROW_WIDTH - 2,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
-  },
-  triangleB: {
-    position: 'absolute',
-    top: -6,
-    left: 0,
-    width: 0,
-    height: 0,
-    borderTopWidth: HEIGHT / 2 + 6,
-    borderBottomWidth: HEIGHT / 2 + 8,
-    borderLeftWidth: ARROW_WIDTH,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'gray',
   },
   triangleC: {
     position: 'absolute',
@@ -192,9 +185,9 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     height: 0,
-    borderLeftWidth: ARROW_WIDTH - 2.5,
+    borderLeftWidth: ARROW_WIDTH - 2,
     borderRightWidth: 0,
-    borderTopWidth: HEIGHT / 2 + (Platform.OS === 'ios'?1:0),
+    borderTopWidth: HEIGHT / 2 + 0,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },
@@ -204,9 +197,9 @@ const styles = StyleSheet.create({
     right: 0,
     width: 0,
     height: 0,
-    borderLeftWidth: ARROW_WIDTH - 3,
+    borderLeftWidth: ARROW_WIDTH - 2,
     borderRightWidth: 0,
-    borderBottomWidth: HEIGHT / 2 + 1,
+    borderBottomWidth: HEIGHT / 2 ,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },
