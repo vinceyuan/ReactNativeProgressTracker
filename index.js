@@ -65,7 +65,7 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
     );
   }
 
-  _progressTracker() {
+  _arrowButtons() {
     let items = ['Button 0', 'Button 1'];
     let shouldShowArrow = items.length == 2;
 
@@ -113,7 +113,7 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
           ReactNativeProgressTracker
         </Text>
         <View style={styles.progressTracker}>
-          { this._progressTracker() }
+          { this._arrowButtons() }
         </View>
       </View>
     );
