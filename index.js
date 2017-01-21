@@ -18,9 +18,18 @@ import {
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = 56;
 const ARROW_WIDTH = 16;
+const selectedColor = '#363a45';
+const notSelectedColor = '#252831';
 
+type State = {
+  selectedIndex: number,
+}
 
-export default class ReactNativeProgressTracker extends Component {
+export default class ReactNativeProgressTracker extends Component <void, void, State> {
+
+  state: State = {
+    selectedIndex: 0,
+  }
 
   // _arrowView() returns a view containing two triangles, A and B when index is 0, or C and D when index is 1.
   // B is a little bigger than A. A is above B in different color to form the shape of >.
@@ -36,16 +45,16 @@ export default class ReactNativeProgressTracker extends Component {
   // | //   |
   // |//  D |
   // --------
-  _arrowView(index: number) {
+  _arrowView(index: number, isSelected: boolean) {
     return ( index == 0 ?
       <View style={[styles.leftArrowView]}>
         <View style={styles.triangleB}></View>
-        <View style={styles.triangleA}></View>
+        <View style={[styles.triangleA, {borderLeftColor: isSelected?selectedColor:notSelectedColor}]}></View>
       </View>
       :
       <View style={[styles.rightArrowView]}>
-        <View style={styles.triangleC}></View>
-        <View style={styles.triangleD}></View>
+        <View style={[styles.triangleC, {borderTopColor: isSelected?selectedColor:notSelectedColor}]}></View>
+        <View style={[styles.triangleD, {borderBottomColor: isSelected?selectedColor:notSelectedColor}]}></View>
       </View>
     );
   }
@@ -57,6 +66,7 @@ export default class ReactNativeProgressTracker extends Component {
     return items.map((item, index) => {
       let left = 0, right = 0;
       let marginLeft = 0, marginRight = 0;
+      let isSelected = index == this.state.selectedIndex;
 
       if (shouldShowArrow) {
         if (index == 1) { // The right one
@@ -76,11 +86,13 @@ export default class ReactNativeProgressTracker extends Component {
 
       return (
         <TouchableOpacity key={index}
-          style={positionStyle}>
-          <View style={[styles.flex, styles.center, styles.bgColor, {marginLeft, marginRight}]}>
+          style={positionStyle}
+          onPress={() => { this.setState({selectedIndex: index})}}
+          >
+          <View style={[styles.flex, styles.center, styles.bgColor, {backgroundColor: isSelected?selectedColor:notSelectedColor}, {marginLeft, marginRight}]}>
             <Text style={styles.titleActionText}>{item}</Text>
           </View>
-          {shouldShowArrow?this._arrowView(index):null}
+          {shouldShowArrow?this._arrowView(index, isSelected):null}
         </TouchableOpacity>
       );
 
@@ -160,7 +172,6 @@ const styles = StyleSheet.create({
     borderLeftWidth: ARROW_WIDTH - 3,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
-    borderLeftColor: '#252831',
   },
   triangleB: {
     position: 'absolute',
@@ -186,7 +197,6 @@ const styles = StyleSheet.create({
     borderTopWidth: HEIGHT / 2 + (Platform.OS === 'ios'?1:0),
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: '#252831',
   },
   triangleD: {
     position: 'absolute',
@@ -199,7 +209,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: HEIGHT / 2 + 1,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: '#252831',
   },
 
 });
