@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import {
   AppRegistry,
   Dimensions,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -21,6 +22,7 @@ import Svg,{
 const WIDTH = Dimensions.get('window').width;
 const HEIGHT = 56;
 const ARROW_WIDTH = 16;
+const MIN_CELL_WIDTH = 150;
 const selectedColor = '#363a45';
 const notSelectedColor = '#252831';
 
@@ -35,6 +37,7 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
   }
 
   // _arrowView() returns a view containing a triangle A, or a view containing two small triangles, C and D.
+  // For the first left arrow view and the last right arrow view, it returns a rect arrow view.
   //
   // --------
   // |\\  C |
@@ -47,47 +50,59 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
   // | //   |
   // |//  D |
   // --------
-  _arrowView(index: number, isSelected: boolean) {
-    return ( index == 0 ?
-      <View style={[styles.leftArrowView]}>
-        <View style={[styles.triangleA, {borderLeftColor: isSelected?selectedColor:notSelectedColor}]}></View>
-        <Svg width={ARROW_WIDTH} height={HEIGHT}>
-          <Polyline fill='none' stroke='gray' strokeWidth='2'
-            points={'0,-2 ' + (ARROW_WIDTH-1) +','+ HEIGHT/2
-            + ' 0,' + (HEIGHT+2)} />
-        </Svg>
-      </View>
-      :
-      <View style={[styles.rightArrowView]}>
-        <View style={[styles.triangleC, {borderTopColor: isSelected?selectedColor:notSelectedColor}]}></View>
-        <View style={[styles.triangleD, {borderBottomColor: isSelected?selectedColor:notSelectedColor}]}></View>
-      </View>
-    );
-  }
-
-  _arrowButtons() {
-    let items = ['Button 0', 'Button 1'];
-    let shouldShowArrow = items.length == 2;
-
-    return items.map((item, index) => {
-      let left = 0, right = 0;
-      let marginLeft = 0, marginRight = 0;
-      let isSelected = index == this.state.selectedIndex;
-
-      if (shouldShowArrow) {
-        if (index == 1) { // The right one
-          left = (WIDTH - ARROW_WIDTH) / 2; right = 0;
-          marginLeft = ARROW_WIDTH; marginRight = 0;
-        } else {
-          left = 0; right = (WIDTH - ARROW_WIDTH) / 2;
-          marginLeft = 0; marginRight = ARROW_WIDTH;
-        }
+  _arrowView(index: number, totalCount: number, isLeft: boolean, isSelected: boolean) {
+    let color = isSelected?selectedColor:notSelectedColor;
+    if (isLeft) {
+      if (index == 0) {
+        // For the first cell, add a rect arrow view
+        return <View style={[styles.leftArrowView, {backgroundColor: color}]} />
+      } else {
+        // For other cell, add an arrow view containing C, D.
+        return (
+          <View style={[styles.leftArrowView]}>
+            <View style={[styles.triangleC, {borderTopColor: color}]}></View>
+            <View style={[styles.triangleD, {borderBottomColor: color}]}></View>
+          </View>
+        );
       }
 
+    } else { // Right arrow view
+      if (index == totalCount - 1) {
+        // For the last cell, add a rect arrow view
+        return <View style={[styles.rightArrowView, {backgroundColor: color}]} />
+      } else {
+        // An arrow view containing A and polyline.
+        return (
+          <View style={[styles.rightArrowView]}>
+            <View style={[styles.triangleA, {borderLeftColor: isSelected?selectedColor:notSelectedColor}]}></View>
+            <Svg width={ARROW_WIDTH} height={HEIGHT}>
+              <Polyline fill='none' stroke='gray' strokeWidth='2'
+                points={'0,-2 ' + (ARROW_WIDTH-1) +','+ HEIGHT/2
+                + ' 0,' + (HEIGHT+2)} />
+            </Svg>
+          </View>
+        );
+      }
+    }
+  }
+
+  _arrowButtons(items: Array<string>, cellWidth: number) {
+    let totalCount = items.length;
+
+    return items.map((item, index) => {
+      let left = 0;
+      let isSelected = index == this.state.selectedIndex;
+
+      if (totalCount == 1 || index == 0) {
+        left = 0;
+      } else {
+        left = (cellWidth - ARROW_WIDTH) * index;
+      }
       let positionStyle = {
         position: 'absolute',
-        top: 0, left, right,
+        top: 0, left,
         height: HEIGHT,
+        width: cellWidth,
       };
 
       return (
@@ -95,10 +110,15 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
           style={positionStyle}
           onPress={() => { this.setState({selectedIndex: index})}}
           >
-          <View style={[styles.flex, styles.center, styles.bgColor, {backgroundColor: isSelected?selectedColor:notSelectedColor}, {marginLeft, marginRight}]}>
+          { // Left arrow view
+            this._arrowView(index, totalCount, true, isSelected)
+          }
+          <View style={[styles.titleWrapper, styles.center, styles.bgColor, {backgroundColor: isSelected?selectedColor:notSelectedColor}]}>
             <Text style={styles.titleActionText}>{item}</Text>
           </View>
-          {shouldShowArrow?this._arrowView(index, isSelected):null}
+          { // Right arrow view
+            this._arrowView(index, totalCount, false, isSelected)
+          }
         </TouchableOpacity>
       );
 
@@ -107,14 +127,32 @@ export default class ReactNativeProgressTracker extends Component <void, void, S
   }
 
   render() {
+    let items = ['Button 0', 'Button 1', 'Button 2', 'Button 3'];
+    let totalCount = items.length;
+    let cellWidth = WIDTH;
+    let contentWidth = WIDTH;
+    if (totalCount > 1) {
+      cellWidth = (WIDTH - ARROW_WIDTH) / totalCount + ARROW_WIDTH;
+      if (cellWidth < MIN_CELL_WIDTH) {
+        cellWidth = MIN_CELL_WIDTH;
+      }
+      contentWidth = (cellWidth - ARROW_WIDTH) * totalCount + ARROW_WIDTH;
+    }
+
     return (
       <View style={styles.container}>
         <Text style={styles.welcome}>
           ReactNativeProgressTracker
         </Text>
-        <View style={styles.progressTracker}>
-          { this._arrowButtons() }
-        </View>
+        <ScrollView style={styles.progressTracker}
+          horizontal={true}
+          bounces={false}
+          showsHorizontalScrollIndicator={false}
+          >
+          <View style={[styles.scrollViewContent, {width: contentWidth}]}>
+            { this._arrowButtons(items, cellWidth) }
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -134,10 +172,9 @@ const styles = StyleSheet.create({
   progressTracker: {
     height: HEIGHT,
     width: WIDTH,
-    overflow: 'hidden',
   },
-  flex: {
-    flex: 1,
+  scrollViewContent: {
+    height: HEIGHT,
   },
   center: {
     alignItems: 'center',
@@ -145,6 +182,13 @@ const styles = StyleSheet.create({
   },
   bgColor: {
     backgroundColor: '#252831',
+  },
+  titleWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: ARROW_WIDTH,
+    right: ARROW_WIDTH,
+    height: HEIGHT,
   },
   titleActionText: {
     fontSize: 20,
@@ -158,14 +202,14 @@ const styles = StyleSheet.create({
     top: 0,
     height: HEIGHT,
     width: ARROW_WIDTH,
-    right:0,
+    left:0,
   },
   rightArrowView: {
     position: 'absolute',
     top: 0,
     height: HEIGHT,
     width: ARROW_WIDTH,
-    left:0
+    right:0
   },
   triangleA: {
     position: 'absolute',
